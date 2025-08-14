@@ -37,6 +37,11 @@ const userSchema = new mongoose.Schema({
     currentlyReading: {
         type: Number,
         default: 0
+    },
+    role: {
+        type: String,
+        enum: ["User", "Admin"],
+        default: "User"
     }
 }, {
     timestamps: true

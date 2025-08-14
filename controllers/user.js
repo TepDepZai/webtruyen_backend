@@ -23,14 +23,14 @@ export const register = async (req, res) => {
             userName,
             email,
             fullName,
-            password: hashedPassword
+            password: hashedPassword,
+            role: "User"
         })
         return res.status(201).json({
             success: true,
             message: "Account created successfully"
         })
     } catch (error) {
-        console.log("Register error:", error);
         return res.status(500).json({
             success: false,
             message: "Internal server error"
@@ -69,7 +69,7 @@ export const login = async (req, res) => {
                 message: "Incorrect password"
             })
         }
-        const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: '1d' });
+        const token = jwt.sign({ _id: user._id }, process.env.SECRET_KEY, { expiresIn: '1d' });
         return res.status(200).cookie("token", token, { httpOnly: true, sameSite: "lax", secure: false, maxAge: 24 * 60 * 60 * 1000 }).json({
             success: true,
             message: `Welcome back ${user.userName}`,
@@ -77,7 +77,6 @@ export const login = async (req, res) => {
             user
         })
     } catch (error) {
-        console.error(error);
         return res.status(500).json({
             success: false,
             message: "Internal server error"
@@ -98,7 +97,6 @@ export const logout = async (_, res) => {
                 message: "Logout successfully."
             });
     } catch (error) {
-        console.error("Logout error:", error);
         return res.status(500).json({
             success: false,
             message: "Internal server error during logout"
@@ -107,7 +105,7 @@ export const logout = async (_, res) => {
 };
 export const getCurrentUser = async (req, res) => {
     try {
-        const userId = req.user?.userId;
+        const userId = req.user?._id;
         if (!userId) {
             return res.status(401).json({
                 success: false,
@@ -129,11 +127,11 @@ export const getCurrentUser = async (req, res) => {
                 userName: user.userName,
                 email: user.email,
                 createdAt: user.createdAt,
+                role: user.role,
             },
         });
 
     } catch (error) {
-        console.log(error);
         return res.status(500).json({
             success: false,
             message: "Internal server error",
@@ -142,7 +140,7 @@ export const getCurrentUser = async (req, res) => {
 }
 export const updateUser = async (req, res) => {
     try {
-        const userId = req.user?.userId;
+        const userId = req.user?._id;
         if (!userId) {
             return res.status(401).json({
                 success: false,
@@ -185,7 +183,6 @@ export const updateUser = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Update user error:", error);
         return res.status(500).json({
             success: false,
             message: "Internal server error"
@@ -196,55 +193,43 @@ export const updateUser = async (req, res) => {
 
 export const changePassword = async (req, res) => {
     try {
-        const userId = req.user?.userId;
+        const userId = req.user?._id;
         if (!userId) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized"
-            });
+            return res.status(401).json({ success: false, message: "Unauthorized" });
         }
+
         const { oldPassword, newPassword } = req.body;
         if (!oldPassword || !newPassword) {
-            return res.status(400).json({
-                success: false,
-                message: "Old password and new password are required"
-            });
+            return res.status(400).json({ success: false, message: "Old and new passwords are required" });
         }
+
         if (newPassword.length < 6 || newPassword.length > 20) {
-            return res.status(400).json({
-                success: false,
-                message: "New password must be between 6 and 20 characters"
-            });
+            return res.status(400).json({ success: false, message: "New password must be 6–20 characters" });
         }
-        const user = await User.findById(userId);
+
+        const user = await User.findById(userId).select('password');
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
+            return res.status(404).json({ success: false, message: "User not found" });
         }
+
         const isOldPasswordMatch = await bcrypt.compare(oldPassword, user.password);
         if (!isOldPasswordMatch) {
-            return res.status(403).json({
-                success: false,
-                message: "Old password is incorrect"
-            });
+            return res.status(403).json({ success: false, message: "Old password is incorrect" });
         }
-        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-        user.password = hashedNewPassword;
+
+        const isSamePassword = await bcrypt.compare(newPassword, user.password);
+        if (isSamePassword) {
+            return res.status(400).json({ success: false, message: "New password must be different from old password" });
+        }
+
+        const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || "10", 10);
+        user.password = await bcrypt.hash(newPassword, saltRounds);
         await user.save();
-        return res.status(200).json({
-            success: true,
-            message: "Password changed successfully"
-        });
+
+        return res.status(200).json({ success: true, message: "Password changed successfully" });
 
     } catch (error) {
-        console.error("Change password error:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error"
-        });
-
+        return res.status(500).json({ success: false, message: "Internal server error" });
     }
+};
 
-}

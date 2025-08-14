@@ -1,76 +1,102 @@
-import { PaperPoint } from "../models/PaperPoint.js";
-
+import { PaperPoint } from "../models/paperPoint.js";
 export const createPaperPoint = async (req, res) => {
     try {
-        const { title, description } = req.body;
-        if (!title || !description) {
-            return res.status(403).json({
+        const { title, content, tags, img, author } = req.body;
+        if (!title?.trim() || !content?.trim() || !tags?.trim() || !img?.trim() || !author?.trim()) {
+            return res.status(400).json({
                 success: false,
-                message: "All fields are required",
+                message: "Lacking information",
             });
-
         }
-        const paperPoint = new PaperPoint({ title, description });
-        paperPoint.save();
+        const paperPoint = await PaperPoint.create({
+            title,
+            content,
+            tags,
+            img,
+            author,
+            createdByName: req.user.fullName,
+            createdById: req.user._id,
+
+        });
         return res.status(201).json({
             success: true,
-            message: "PaperPoint created."
-
-        })
+            data: paperPoint,
+        });
     } catch (error) {
-        console.log("CreatePaperPoint error:", error);
         return res.status(500).json({
             success: false,
-            message: "Internal server error"
+            message: error.message || "Lỗi server",
         });
     }
-}
+};
 
 export const getAllPaperPoints = async (req, res) => {
     try {
-        const paperPoints = await PaperPoint.find({});
-        console.log(paperPoints);
-
+        if (!req.user || !req.user._id) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+        const paperPoints = await PaperPoint.find({ createdById: req.user._id });
         return res.status(200).json({
             success: true,
-            paperPoints: paperPoints.length === 0 ? [] : paperPoints
-        })
-
+            paperPoints
+        });
     } catch (error) {
-        console.log(error);
-
-
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server error"
+        });
+    }
+};
+export const getPaperPointById = async (req, res) => {
+    try {
+        const paperPointId = req.params.paperPointId;
+        const paperPoint = await PaperPoint.findById(paperPointId);
+        return res.status(200).json({
+            success: true,
+            paperPoint
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server error"
+        });
     }
 }
 export const updatePaperPoint = async (req, res) => {
     try {
-        const paperpointID = req.params.paperpointID;
+        const paperPointId = req.params.paperPointId;
 
-        const { title } = req.body
-        console.log(title);
-
-        // const paperpoint = await PaperPoint.findById(paperpointID);
-        const paperPoint = await PaperPoint.findByIdAndUpdate(paperpointID, { title }, { new: true })
+        const { title, content, tags, img, author } = req.body
+        const paperPoint = await PaperPoint.findByIdAndUpdate(paperPointId, { title, content, tags, img, author, createdByName: req.user.fullName }, { new: true })
         return res.status(200).json({
             success: true,
             paperPoint, message: "update true"
         })
     } catch (error) {
-
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Lỗi server",
+        });
     }
 }
 export const deletePaperPoint = async (req, res) => {
     try {
-        const paperpointID = req.params.paperpointID;
-
-        const paperPoint = await PaperPoint.findByIdAndDelete(paperpointID, { title }, { new: true })
+        const paperPointId = req.params.paperPointId;
+        const paperPoint = await PaperPoint.findByIdAndDelete(paperPointId);
+        if (!paperPoint) {
+            return res.status(404).json({
+                success: false,
+                message: "PaperPoint not found"
+            });
+        }
         return res.status(200).json({
             success: true,
-            paperPoint, message: "delete true"
-        })
-
-
+            message: "Delete successful"
+        });
     } catch (error) {
-
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Lỗi server",
+        });
     }
 }
