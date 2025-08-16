@@ -50,11 +50,20 @@ export const getAllPaperPoints = async (req, res) => {
 export const getPaperPointById = async (req, res) => {
     try {
         const paperPointId = req.params.paperPointId;
+        const userId = req.user._id
         const paperPoint = await PaperPoint.findById(paperPointId);
+        if (paperPoint.createdById.toString() !== userId.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: "You do not have permission to access this resource"
+            });
+        }
+
         return res.status(200).json({
             success: true,
             paperPoint
         });
+        
     } catch (error) {
         return res.status(500).json({
             success: false,
