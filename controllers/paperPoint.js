@@ -51,7 +51,11 @@ export const getPaperPointById = async (req, res) => {
     try {
         const paperPointId = req.params.paperPointId;
         const userId = req.user._id
-        const paperPoint = await PaperPoint.findById(paperPointId);
+        const paperPoint = await PaperPoint.findById(paperPointId).populate({
+            path: "Chapter",
+            select: "ChapterName ChapterContent ChapterNumber",
+            options: { sort: { ChapterNumber: -1 } }
+        });
         if (paperPoint.createdById.toString() !== userId.toString()) {
             return res.status(403).json({
                 success: false,
@@ -63,7 +67,7 @@ export const getPaperPointById = async (req, res) => {
             success: true,
             paperPoint
         });
-        
+
     } catch (error) {
         return res.status(500).json({
             success: false,
