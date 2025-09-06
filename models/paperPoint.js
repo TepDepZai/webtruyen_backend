@@ -45,7 +45,13 @@ const PaperPointSchema = new mongoose.Schema(
     type: String,
     trim: true,
     required: true
+  },
+Chapter: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Chapter"
   }
+],
   },
   {
     timestamps: true,

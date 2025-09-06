@@ -5,6 +5,7 @@ import userRouter from "../routes/user.js";
 import cors from 'cors';
 import mainPageRouter from "../routes/mainPage.js";
 import paperpointRouter from "../routes/paperpoint.js";
+import chapterRouter from "../routes/chapter.js";
 import cookieParser from 'cookie-parser';
 
 const app = express();
@@ -25,6 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/v1/mainPage", mainPageRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/paperpoint", paperpointRouter);
+app.use("/api/v1/chapter", chapterRouter);
 
 const hostname = 'localhost';
 const port = process.env.PORT || 2004
