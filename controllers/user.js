@@ -62,6 +62,12 @@ export const login = async (req, res) => {
                 message: "Incorrect email or password"
             })
         }
+        if (!user.isActive) {
+            return res.status(403).json({
+                success: false,
+                message: "Your account has been deactivated. Please contact admin.",
+            });
+        }
         const isPasswordMatch = await bcrypt.compare(password, user.password);
         if (!isPasswordMatch) {
             return res.status(403).json({
@@ -229,6 +235,101 @@ export const changePassword = async (req, res) => {
         return res.status(200).json({ success: true, message: "Password changed successfully" });
 
     } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+export const getAllUsers = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const size = parseInt(req.query.size) || 10;
+        const totalUsers = await User.countDocuments();
+        const totalPages = Math.ceil(totalUsers / size);
+        const users = await User.find()
+            .select("-password")
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * size)
+            .limit(size);
+
+        return res.status(200).json({
+            success: true,
+            users,
+            pagination: {
+                total: totalUsers,
+                page,
+                size,
+                totalPages,
+                has_prev: page > 1,
+                has_next: page < totalPages,
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+export const assignRole = async (req, res) => {
+    try {
+        const { user_id, role } = req.body;
+        if (!user_id) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+
+        const user = await User.findById(user_id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        user.role = role === "Admin" ? "User" : "Admin";
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Role updated successfully",
+            role: user.role,
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+export const activateUser = async (req, res) => {
+    try {
+        const { user_id } = req.body;
+
+        if (!user_id) {
+            return res.status(400).json({ success: false, message: "UserId is required" });
+        }
+
+        const user = await User.findById(user_id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        if (user.role === "Admin" && user.isActive === true) {
+            return res.status(403).json({
+                success: false,
+                message: "Admin account cannot be deactivated",
+            });
+        }
+        if (String(user._id) === String(req.user._id) && user.isActive === true) {
+            return res.status(403).json({
+                success: false,
+                message: "You cannot deactivate your own account while logged in",
+            });
+        }
+
+        user.isActive = !user.isActive;
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: user.isActive
+                ? "User activated successfully"
+                : "User deactivated successfully",
+            user: { id: user._id, isActive: user.isActive },
+        });
+    } catch (error) {
+        console.error("Toggle user status error:", error);
         return res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
