@@ -89,6 +89,54 @@ export const login = async (req, res) => {
         });
     }
 }
+
+export const loginWithGoogle = async (req,res) =>{
+    try {
+        const { access_token } = req.body;
+        if (!access_token) {
+            return res.status(400).json({
+                success: false,
+                message: "Access token is required"
+            });
+        }
+        // Verify the token with Google
+        const userData = jwt.decode(access_token);
+        if (!userData.email) {
+            return res.status(403).json({
+                success: false,
+                message: "Invalid Google token"
+            });
+        }
+        // Check if user exists in the database
+        let user = await User.findOne({ email: userData.email });
+        if (!user) {
+            // If user doesn't exist, create a new one
+            user = await User.create({
+                userName: userData.email.split('@')[0],
+                email: userData.email,
+                fullName: userData.name,
+                password: "google-auth", // You can set a default password or handle it differently
+                role: "User",
+                types: "login-google"
+            });
+        }
+        // Generate a JWT token
+        const token = jwt.sign({ _id: user._id }, process.env.SECRET_KEY, { expiresIn: '1d' });
+        return res.status(200).cookie("token", token, { httpOnly: true, sameSite: "lax", secure: false, maxAge: 24 * 60 * 60 * 1000 }).json({
+            success: true,
+            message: `Welcome back ${user.userName}`,
+            token,
+            user
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+}
+
+
 export const logout = async (_, res) => {
     try {
         return res
@@ -290,7 +338,7 @@ export const assignRole = async (req, res) => {
             role: user.role,
         });
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Internal server error" });
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 export const activateUser = async (req, res) => {

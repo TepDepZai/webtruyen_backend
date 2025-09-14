@@ -46,7 +46,12 @@ const userSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
-    }
+    },
+    types: {
+        type: String,
+        enum: ["login", "login-google"],
+        default: "login"
+    },
 }, {
     timestamps: true
 })
