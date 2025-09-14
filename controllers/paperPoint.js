@@ -67,7 +67,6 @@ export const getPaperPointById = async (req, res) => {
             success: true,
             paperPoint
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,
