@@ -73,3 +73,25 @@ export const getBookById = async (req, res) => {
     }
 };
 
+export const ItemRollBar = async (req, res) => {
+  try {
+    const books = await PaperPoint.find({ roleBar: true })
+      .select("title img chapterNumber")
+      .populate({
+                path: "Chapter",
+                select: "ChapterNumber",
+                options: { sort: { ChapterNumber: -1 } }
+            })
+      .limit(8);
+
+    return res.status(200).json({
+      success: true,
+      books,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
