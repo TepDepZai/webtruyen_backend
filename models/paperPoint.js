@@ -8,6 +8,10 @@ const PaperPointSchema = new mongoose.Schema(
       trim: true,
       maxlength: 200
     },
+    roleBar: {
+      type: Boolean,
+      default: true
+    },
     slug: {
       type: String,
       index: true,
