@@ -60,8 +60,6 @@ export const CreateChapter = async (req, res) => {
     res.status(500).json({ error: error.message || "Server error" });
   }
 };
-//Lấy Book kèm các Chapter
-//const bookWithChapters = await PaperPoint.findById(bookId).populate("Chapter");
 
 export const getAllChapters = async (req, res) => {
   try {
@@ -90,15 +88,13 @@ export const getChapterByIdAndNumber = async (req, res) => {
       return res.status(404).json({ error: "Chapter not found" });
     }
 
-    // Lấy chương trước (ChapterNumber nhỏ nhất mà < number)
     const prevChapter = await chapter
       .findOne({ BookId: id, ChapterNumber: { $lt: Number(number) } })
-      .sort({ ChapterNumber: -1 }); // lớn nhất nhưng nhỏ hơn number
+      .sort({ ChapterNumber: -1 }); 
 
-    // Lấy chương sau (ChapterNumber nhỏ nhất mà > number)
     const nextChapter = await chapter
       .findOne({ BookId: id, ChapterNumber: { $gt: Number(number) } })
-      .sort({ ChapterNumber: 1 }); // nhỏ nhất nhưng lớn hơn number
+      .sort({ ChapterNumber: 1 });
 
     res.status(200).json({
       chapter: {
