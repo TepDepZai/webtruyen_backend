@@ -2,15 +2,12 @@ import { PaperPoint } from "../models/paperPoint.js";
 
 export const getAllBooks = async (req, res) => {
     try {
-        // Lấy page và size từ query (nếu không có thì mặc định)
         const page = parseInt(req.query.page) || 1;
         const size = parseInt(req.query.size) || 10;
 
-        // Đếm tổng số sách
         const totalItems = await PaperPoint.countDocuments({});
         const totalPages = Math.ceil(totalItems / size);
 
-        // Query dữ liệu theo trang
         const books = await PaperPoint.find({})
             .populate({
                 path: "Chapter",

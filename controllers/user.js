@@ -299,8 +299,7 @@ export const getAllUsers = async (req, res) => {
     const filter = search
       ? {
           $or: [
-            { fullName: { $regex: search, $options: "i" } },
-            { email: { $regex: search, $options: "i" } },
+            { email: { $regex: `^${search}`, $options: "i" } },
           ],
         }
       : {};

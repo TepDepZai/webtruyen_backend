@@ -6,11 +6,11 @@ const PaperPointSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      maxlength: 200
+      maxLength: 200
     },
     roleBar: {
       type: Boolean,
-      default: true
+      default: false
     },
     slug: {
       type: String,
@@ -25,7 +25,7 @@ const PaperPointSchema = new mongoose.Schema(
       type: String,
       required: true,
       minlength: 10,
-      maxlength: 20000
+      maxLength: 20000
     },
     author: {
       type: String,
