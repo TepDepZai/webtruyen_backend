@@ -8,6 +8,8 @@ import paperpointRouter from "../routes/paperpoint.js";
 import chapterRouter from "../routes/chapter.js";
 import cookieParser from 'cookie-parser';
 import adminRouter from "../routes/admin.js";
+import AiRouter from "./../routes/AI.routes.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const app = express();
 dotenv.config();
@@ -29,9 +31,13 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/paperpoint", paperpointRouter);
 app.use("/api/v1/chapter", chapterRouter);
 app.use("/api/v1/admin", adminRouter);
-
+app.use("/api/v1/ai", AiRouter);
 const hostname = 'localhost';
 const port = process.env.PORT || 2004
+
+const genAI = new GoogleGenerativeAI({
+  apiKey: process.env.AI_KEY
+});
 
 app.listen(port, hostname, () => {
   console.log(`chào tep, this is link for server http://${hostname}:${port}/`);
