@@ -8,7 +8,8 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "seed:roles": "node db/seed.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
