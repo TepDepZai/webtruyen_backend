@@ -1,44 +1,29 @@
-import { PaperPoint } from "../models/paperPoint.js"; 
+import { PaperPoint } from "../models/paperPoint.js";
+import { getBooksPaginated, getUsersPaginated } from "../services/adminService.js";
 
 export const getBookAdmin = async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const size = Math.max(1, parseInt(req.query.size) || 9);
-    const search = req.query.search?.trim() || ""; 
-
-    const filter = search
-      ? {
-          $or: [
-            { title: { $regex: `^${search}`, $options: "i" } },
-          ],
-        }
-      : {};
-    const totalItems = await PaperPoint.countDocuments(filter);
-    const totalPages = Math.max(1, Math.ceil(totalItems / size));
-
-    const books = await PaperPoint.find(filter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * size)
-      .limit(size);
-
-    res.status(200).json({
-      success: true,
-      books,
-      pagination: {
-        total: totalItems,
-        page,
-        size,
-        total_pages: totalPages,
-        has_prev: page > 1,
-        has_next: page < totalPages,
-      },
-    });
+    const result = await getBooksPaginated(req.query);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ 
       success: false, 
       error: error.message || "Server error" 
     });
   }
+};
+export const getUsersAdmin = async (req, res) => {
+    try {
+        const result = await getUsersPaginated(req.query);
+        res.status(200).json(result);
+    } catch (error) {
+        console.error("getUsersAdmin error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
 };
 export const deleteBookAdmin = async (req, res) => {
   try {

@@ -90,7 +90,7 @@ export const login = async (req, res) => {
     }
 }
 
-export const loginWithGoogle = async (req,res) =>{
+export const loginWithGoogle = async (req, res) => {
     try {
         const { access_token } = req.body;
         if (!access_token) {
@@ -157,42 +157,42 @@ export const logout = async (_, res) => {
         });
     }
 };
-export const getCurrentUser = async (req, res) => {
-  try {
-    const userId = req.user?._id;
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
+export const getMe = async (req, res) => {
+    try {
+        const userId = req.user?._id;
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
 
-    const user = await User.findById(userId).select("-password");
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
+        const user = await User.findById(userId).select("-password");
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
 
-    return res.status(200).json({
-      success: true,
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        userName: user.userName,
-        email: user.email,
-        createdAt: user.createdAt,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error("getCurrentUser error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
+        return res.status(200).json({
+            success: true,
+            user: {
+                id: user._id,
+                fullName: user.fullName,
+                userName: user.userName,
+                email: user.email,
+                createdAt: user.createdAt,
+                role: user.role,
+            },
+        });
+    } catch (error) {
+        console.error("getMe error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
 };
 
 export const updateUser = async (req, res) => {
@@ -289,50 +289,6 @@ export const changePassword = async (req, res) => {
         return res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
-
-export const getAllUsers = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const size = parseInt(req.query.size) || 10;
-    const search = req.query.search || ""; 
-
-    const filter = search
-      ? {
-          $or: [
-            { email: { $regex: `^${search}`, $options: "i" } },
-          ],
-        }
-      : {};
-
-    const totalUsers = await User.countDocuments(filter);
-    const totalPages = Math.ceil(totalUsers / size);
-
-    const users = await User.find(filter)
-      .select("-password")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * size)
-      .limit(size);
-
-    return res.status(200).json({
-      success: true,
-      users,
-      pagination: {
-        total: totalUsers,
-        page,
-        size,
-        totalPages,
-        has_prev: page > 1,
-        has_next: page < totalPages,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
-
 export const assignRole = async (req, res) => {
     try {
         const { user_id, role } = req.body;

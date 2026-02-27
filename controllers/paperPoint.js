@@ -77,13 +77,36 @@ export const getPaperPointById = async (req, res) => {
 export const updatePaperPoint = async (req, res) => {
     try {
         const paperPointId = req.params.paperPointId;
+        const paperPoint = await PaperPoint.findById(paperPointId);
 
-        const { title, content, tags, img, author } = req.body
-        const paperPoint = await PaperPoint.findByIdAndUpdate(paperPointId, { title, content, tags, img, author, createdByName: req.user.fullName }, { new: true })
+        if (!paperPoint) {
+            return res.status(404).json({
+                success: false,
+                message: "PaperPoint not found",
+            });
+        }
+
+        const isAdmin = ["Admin", "SuperAdmin"].includes(req.user.role);
+        const isOwner = paperPoint.createdById?.toString() === req.user._id.toString();
+
+        if (!isAdmin && !isOwner) {
+            return res.status(403).json({
+                success: false,
+                message: "You do not have permission to update this resource",
+            });
+        }
+
+        const { title, content, tags, img, author } = req.body;
+        const updated = await PaperPoint.findByIdAndUpdate(
+            paperPointId,
+            { title, content, tags, img, author, createdByName: req.user.fullName },
+            { new: true }
+        );
         return res.status(200).json({
             success: true,
-            paperPoint, message: "update true"
-        })
+            paperPoint: updated,
+            message: "update true",
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -94,13 +117,25 @@ export const updatePaperPoint = async (req, res) => {
 export const deletePaperPoint = async (req, res) => {
     try {
         const paperPointId = req.params.paperPointId;
-        const paperPoint = await PaperPoint.findByIdAndDelete(paperPointId);
+        const paperPoint = await PaperPoint.findById(paperPointId);
         if (!paperPoint) {
             return res.status(404).json({
                 success: false,
                 message: "PaperPoint not found"
             });
         }
+
+        const isAdmin = ["Admin", "SuperAdmin"].includes(req.user.role);
+        const isOwner = paperPoint.createdById?.toString() === req.user._id.toString();
+
+        if (!isAdmin && !isOwner) {
+            return res.status(403).json({
+                success: false,
+                message: "You do not have permission to delete this resource",
+            });
+        }
+
+        await PaperPoint.findByIdAndDelete(paperPointId);
         return res.status(200).json({
             success: true,
             message: "Delete successful"
